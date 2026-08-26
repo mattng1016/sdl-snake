@@ -9,7 +9,7 @@ typedef struct snakeNode {
 
 typedef struct snakeInfo {
   int size;
-  enum snakeDir dir;
+  snakeDir dir;
   snakeNode* head;
   snakeNode* tail;
 } snakeInfo;

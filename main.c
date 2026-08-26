@@ -7,11 +7,14 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <SDL3/SDL.h>
+#include <time.h>
 #include <SDL3/SDL_main.h>
 
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 
+static bool eaten = true; 
+static int appleLocation[2];
 static snakeInfo *snake;
 
 // Converts hex from macro to RGB values
@@ -24,7 +27,7 @@ RGB hexToRGB(int hex) {
 } 
 
 // Draws game grid
-void drawGrid(SDL_Renderer *renderer) {
+void drawGrid() {
   SDL_SetRenderDrawColor(renderer, 105, 105, 105, SDL_ALPHA_OPAQUE);
   for (int x = 0; x <= WIDTH; x += CELL_SIZE) {
     const SDL_FRect rect = {x, 0, LINE_WIDTH, HEIGHT};
@@ -37,7 +40,7 @@ void drawGrid(SDL_Renderer *renderer) {
 }
 
 // Draws cell based on given coordinates and color
-void drawCell(SDL_Renderer *renderer, int x, int y, int hex) {
+void drawCell(int x, int y, int hex) {
   RGB rgb;
   const SDL_FRect rect = {(x*CELL_SIZE)+1, (y*CELL_SIZE)+1, CELL_SIZE-1, CELL_SIZE-1}; 
 
@@ -50,8 +53,8 @@ void drawCell(SDL_Renderer *renderer, int x, int y, int hex) {
 }
 
 // Draws a snake
-void drawSnake(SDL_Renderer *renderer, snakeInfo* snake) {
-  drawCell(renderer, snake->head->x, snake->head->y, RED_COLOR);
+void drawSnake(snakeInfo* snake) {
+  drawCell(snake->head->x, snake->head->y, RED_COLOR);
   snakeNode *temp = snake->head->prev; 
   SDL_FRect *body = (SDL_FRect*)malloc((snake->size)*sizeof(SDL_FRect));
   for (int i = 0; i < snake->size - 1; i++) {
@@ -67,6 +70,7 @@ void drawSnake(SDL_Renderer *renderer, snakeInfo* snake) {
   free(body);
 }
 
+// Moves the given snake
 void moveSnake(snakeInfo* snake) {
   switch (snake->dir) {
     case UP:
@@ -89,17 +93,56 @@ void moveSnake(snakeInfo* snake) {
   SDL_Delay(100);
 }
 
+//Checks if given coordinate collides with snake
+bool collideWithSnake(snakeInfo* snake, int x, int y) {
+  snakeNode* temp = snake->head; 
+  for (int i = 0; i < snake->size; i++) {
+    if (x == getCoordX(temp) && y == getCoordY(temp)) {
+      return true;
+    } else temp = temp->prev;
+  }
+  return false;
+}
+
+// Generates a apple in a random location
+void generateApple(snakeInfo* snake) {
+  int x, y;
+  do {
+    x = rand() % WIDTH/CELL_SIZE;
+    y = rand() % HEIGHT/CELL_SIZE;
+   } while (collideWithSnake(snake, x, y)); 
+  appleLocation[0] = x;
+  appleLocation[1] = y;
+}
+
+void drawApple() {
+  drawCell(appleLocation[0], appleLocation[1], GREEN_COLOR);
+}
+
+void snakeEatsApple(snakeInfo* snake) {
+  if (appleLocation[0] == getCoordX(snake->head) && appleLocation[1] == getCoordY(snake->head)) {
+    eaten = true; 
+    snakeIncrease(snake);
+    generateApple(snake);
+  }
+}
+
 // Initializer
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
   SDL_SetAppMetadata("snake", "0.0", "com.snake");
   SDL_Init(SDL_INIT_VIDEO);
   SDL_CreateWindowAndRenderer("snake", WIDTH, HEIGHT, SDL_WINDOW_RESIZABLE, &window, &renderer);
+  srand(time(NULL));
+
   
   snake = snakeInit(10, 10);
   deb(snake, 10, 11);
   deb(snake, 10, 12);
   deb(snake, 10, 13);
   deb(snake, 10, 14);
+
+  generateApple(snake);
+
   return SDL_APP_CONTINUE;
 }
 // Events
@@ -126,10 +169,13 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 SDL_AppResult SDL_AppIterate(void *appstate) {
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
   SDL_RenderClear(renderer); 
-  drawGrid(renderer);
+  drawGrid();
 
-  drawSnake(renderer, snake);
+  drawApple();
+  drawSnake(snake);
   moveSnake(snake);
+
+  snakeEatsApple(snake);
 
   SDL_RenderPresent(renderer); 
   return SDL_APP_CONTINUE;

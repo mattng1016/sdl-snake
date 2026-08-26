@@ -7,8 +7,9 @@
 #define LINE_WIDTH 1
 
 #define RED_COLOR 0xff0000
+#define GREEN_COLOR 0x00ff00
 
-enum snakeDir {UP, DOWN, LEFT, RIGHT};
+typedef enum {UP, DOWN, LEFT, RIGHT} snakeDir ;
 
 typedef struct RGB RGB;
 struct RGB {
@@ -18,7 +19,7 @@ struct RGB {
 };
 
 RGB hexToRGB(int hex);
-void drawGrid(SDL_Renderer *renderer);
-void drawCell(SDL_Renderer *renderer, int x, int y, int hex);
-
-
+void drawGrid();
+void drawCell(int x, int y, int hex);
+//void drawSnake(SDL_Renderer *renderer, snakeInfo* snake);
+//void moveSnake(snakeInfo* snake);
