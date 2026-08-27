@@ -3,7 +3,7 @@
 
 #define WIDTH 900
 #define HEIGHT 600
-#define CELL_SIZE 20
+#define CELL_SIZE 30
 #define LINE_WIDTH 1
 
 #define RED_COLOR 0xff0000

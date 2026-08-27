@@ -13,9 +13,13 @@
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 
+static bool gameOver = false;
 static bool eaten = true; 
 static int appleLocation[2];
 static snakeInfo *snake;
+
+const Uint32 moveSpeed = 100;
+static Uint32 lastMoveTime = 0;
 
 // Converts hex from macro to RGB values
 RGB hexToRGB(int hex) {
@@ -90,18 +94,40 @@ void moveSnake(snakeInfo* snake) {
       deleteTail(&(snake->tail));
       break;
   }
-  SDL_Delay(100);
 }
 
-//Checks if given coordinate collides with snake
-bool collideWithSnake(snakeInfo* snake, int x, int y) {
+// Checks if given coordinate collides with snake
+bool collideWithSnake(snakeInfo* snake, int x, int y, bool head) {
   snakeNode* temp = snake->head; 
-  for (int i = 0; i < snake->size; i++) {
+  int s = snake->size;
+  if (head == 1) {
+    temp = temp->prev;
+    s--;
+  }
+  for (int i = 0; i < s; i++) {
     if (x == getCoordX(temp) && y == getCoordY(temp)) {
       return true;
     } else temp = temp->prev;
   }
   return false;
+}
+
+// Checks if snake head collides with body
+bool snakeCollideBody(snakeInfo* snake) {
+  if (collideWithSnake(snake, getCoordX(snake->head), getCoordY(snake->head), 1)) {
+    return true;
+  }
+  return false;
+}
+
+// Checks if snake is out of bounds
+bool snakeOutOfBounds(snakeInfo* snake) {
+  int x = getCoordX(snake->head);
+  int y = getCoordY(snake->head);
+  if (x < 0 || x > WIDTH/CELL_SIZE || y < 0 || y > HEIGHT/CELL_SIZE) {
+    return true;
+  }
+    return false; 
 }
 
 // Generates a apple in a random location
@@ -110,7 +136,7 @@ void generateApple(snakeInfo* snake) {
   do {
     x = rand() % WIDTH/CELL_SIZE;
     y = rand() % HEIGHT/CELL_SIZE;
-   } while (collideWithSnake(snake, x, y)); 
+   } while (collideWithSnake(snake, x, y, 0)); 
   appleLocation[0] = x;
   appleLocation[1] = y;
 }
@@ -127,6 +153,26 @@ void snakeEatsApple(snakeInfo* snake) {
   }
 }
 
+Uint32 getElapsed() {
+  Uint32 ticks = 0, lastTicks, elapsed;
+  lastTicks = ticks;
+  ticks = SDL_GetTicks();
+  elapsed = ticks - lastTicks;
+  return elapsed;
+}
+
+void updateSnakeDir (Uint8 *keystates) {
+  if (keystates[SDL_SCANCODE_UP] && snake->dir != DOWN) {
+    snake->dir = UP;
+  } else if (keystates[SDL_SCANCODE_LEFT] && snake->dir != RIGHT) {
+    snake->dir = LEFT;
+  } else if (keystates[SDL_SCANCODE_DOWN] && snake->dir != UP){
+    snake->dir = DOWN;
+  } else if (keystates[SDL_SCANCODE_RIGHT] && snake->dir != LEFT) {
+    snake->dir = RIGHT;
+  }
+}
+
 // Initializer
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
   SDL_SetAppMetadata("snake", "0.0", "com.snake");
@@ -134,7 +180,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
   SDL_CreateWindowAndRenderer("snake", WIDTH, HEIGHT, SDL_WINDOW_RESIZABLE, &window, &renderer);
   srand(time(NULL));
 
-  
+
   snake = snakeInit(10, 10);
   deb(snake, 10, 11);
   deb(snake, 10, 12);
@@ -150,31 +196,48 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
   if (event->type == SDL_EVENT_QUIT) {
     return SDL_APP_SUCCESS;
   }
-  if (event->key.key == SDLK_RIGHT) {
+  /*if (event->key.key == SDLK_D && snake->dir != LEFT && !(event->key.repeat)) {
     snake->dir = RIGHT;
+    printf("RIGHT");
   }
-  if (event->key.key == SDLK_LEFT) {
+  if (event->key.key == SDLK_A && snake->dir != RIGHT && !(event->key.repeat)) {
     snake->dir = LEFT;
+    printf("LEFT");
   }
-  if (event->key.key == SDLK_DOWN) {
+  if (event->key.key == SDLK_S && snake->dir != UP && !(event->key.repeat)) {
     snake->dir = DOWN;
+    printf("DOWN");
   }
-  if (event->key.key == SDLK_UP) {
+  if (event->key.key == SDLK_W && snake->dir != DOWN && !(event->key.repeat)) {
     snake->dir = UP; 
-  }
+    printf("UP");
+  } */
   return SDL_APP_CONTINUE;
 }
 
 // Iterates every frame
 SDL_AppResult SDL_AppIterate(void *appstate) {
+  Uint32 currentTime = SDL_GetTicks();
+  const Uint8* keystates = SDL_GetKeyboardState(NULL);
+
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
   SDL_RenderClear(renderer); 
   drawGrid();
 
+  updateSnakeDir(keystates);
+
   drawApple();
   drawSnake(snake);
-  moveSnake(snake);
 
+  if (currentTime - lastMoveTime >= moveSpeed) {
+    moveSnake(snake);  
+    printHeadCoord(snake->head);
+    if (snakeCollideBody(snake) || snakeOutOfBounds(snake)) {
+      return SDL_APP_FAILURE;
+    }
+    lastMoveTime = currentTime;
+  }
+  
   snakeEatsApple(snake);
 
   SDL_RenderPresent(renderer); 

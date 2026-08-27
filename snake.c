@@ -47,6 +47,10 @@ void printDebug(snakeNode* head) {
   }
 }
 
+void printHeadCoord(snakeNode* head) {
+  printf("%d, %d\n", getCoordX(head), getCoordY(head));
+}
+
 snakeInfo* snakeInit(int x, int y) {
   snakeInfo* snake = (snakeInfo*)malloc(sizeof(snakeInfo)); 
   snakeNode* head = nodeInit(x, y);

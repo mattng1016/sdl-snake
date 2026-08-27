@@ -21,6 +21,7 @@ void deleteTail(snakeNode** tail);
 int getCoordX(snakeNode* node);
 int getCoordY(snakeNode* node);
 void printDebug(snakeNode* head);
+void printHeadCoord(snakeNode* head);
 snakeInfo* snakeInit(int x, int y); 
 void snakeIncrease(snakeInfo* snake);
 void deb(snakeInfo* snake, int x, int y);
