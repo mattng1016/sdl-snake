@@ -14,7 +14,6 @@ static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 
 static bool gameOver = false;
-static bool eaten = true; 
 static int appleLocation[2];
 static snakeInfo *snake;
 
@@ -141,27 +140,21 @@ void generateApple(snakeInfo* snake) {
   appleLocation[1] = y;
 }
 
+// Draws apple 
 void drawApple() {
   drawCell(appleLocation[0], appleLocation[1], GREEN_COLOR);
 }
 
+// Increase snake size when snake eats apple
 void snakeEatsApple(snakeInfo* snake) {
   if (appleLocation[0] == getCoordX(snake->head) && appleLocation[1] == getCoordY(snake->head)) {
-    eaten = true; 
     snakeIncrease(snake);
     generateApple(snake);
   }
 }
 
-Uint32 getElapsed() {
-  Uint32 ticks = 0, lastTicks, elapsed;
-  lastTicks = ticks;
-  ticks = SDL_GetTicks();
-  elapsed = ticks - lastTicks;
-  return elapsed;
-}
-
-void updateSnakeDir (Uint8 *keystates) {
+// Changes snake direction based on key pressed
+void updateSnakeDir (const bool *keystates) {
   if (keystates[SDL_SCANCODE_UP] && snake->dir != DOWN) {
     snake->dir = UP;
   } else if (keystates[SDL_SCANCODE_LEFT] && snake->dir != RIGHT) {
@@ -180,45 +173,24 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
   SDL_CreateWindowAndRenderer("snake", WIDTH, HEIGHT, SDL_WINDOW_RESIZABLE, &window, &renderer);
   srand(time(NULL));
 
-
-  snake = snakeInit(10, 10);
-  deb(snake, 10, 11);
-  deb(snake, 10, 12);
-  deb(snake, 10, 13);
-  deb(snake, 10, 14);
-
+  snake = snakeInit((WIDTH/CELL_SIZE)/2, (HEIGHT/CELL_SIZE)/2);
   generateApple(snake);
 
   return SDL_APP_CONTINUE;
 }
+
 // Events
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
   if (event->type == SDL_EVENT_QUIT) {
     return SDL_APP_SUCCESS;
   }
-  /*if (event->key.key == SDLK_D && snake->dir != LEFT && !(event->key.repeat)) {
-    snake->dir = RIGHT;
-    printf("RIGHT");
-  }
-  if (event->key.key == SDLK_A && snake->dir != RIGHT && !(event->key.repeat)) {
-    snake->dir = LEFT;
-    printf("LEFT");
-  }
-  if (event->key.key == SDLK_S && snake->dir != UP && !(event->key.repeat)) {
-    snake->dir = DOWN;
-    printf("DOWN");
-  }
-  if (event->key.key == SDLK_W && snake->dir != DOWN && !(event->key.repeat)) {
-    snake->dir = UP; 
-    printf("UP");
-  } */
   return SDL_APP_CONTINUE;
 }
 
 // Iterates every frame
 SDL_AppResult SDL_AppIterate(void *appstate) {
   Uint32 currentTime = SDL_GetTicks();
-  const Uint8* keystates = SDL_GetKeyboardState(NULL);
+  const bool* keystates = SDL_GetKeyboardState(NULL);
 
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
   SDL_RenderClear(renderer); 
@@ -246,7 +218,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
 // Quit app
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
-
+  free(snake);
 }
 
 /*cmake --build build
