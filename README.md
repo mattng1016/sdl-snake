@@ -1,8 +1,11 @@
 # SDL Snake
 
- classic Snake game built in C using [SDL3](https://www.libsdl.org/).
+ classic Snake game built in C using [SDL3]([https://wiki.libsdl.org/SDL3/FrontPage]).
+
+ <img width="1280" height="941" alt="ScreenRecording2026-09-02at6 11 29PM-ezgif com-video-to-gif-converter" src="https://github.com/user-attachments/assets/821ebe7d-1b35-4e22-bed7-5c894005ada5" />
 
 ## Requirements
+
 
 - CMake 3.20+
 - SDL3
